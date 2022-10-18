@@ -16,7 +16,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x]
+        node-version: [16.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
@@ -28,17 +28,15 @@ jobs:
         cache: 'npm'
     - run: npm ci
     - run: npm run build --if-present
-    - name: Cloud Storage Uploader
-      # You may pin to the exact commit or the version.
-      # uses: google-github-actions/upload-cloud-storage@a42a4672297bff0f4a685fe7126e971ca1797559
-      uses: google-github-actions/upload-cloud-storage@v0.10.2
+    
+    - id: 'auth'
+      uses: 'google-github-actions/auth@v0'
       with:
-        # Optional service account key to use for authentication to GCS. This should be the JSON formatted private key which can be exported from the Cloud Console. The value can be raw or base64-encoded.
-        credentials: ${{secrets.SERVICE_ACCOUNT_CREDENTIALS}}
-        # Project ID to use for making requests. By default, this is extracted from the credentials or the running environment.
-        project_id: dnsr-cdn
-        # The path to a file or folder inside the action's filesystem that should be uploaded to the bucket. You can specify either the absolute path or the relative path from the action.
-        path: /dist
-        # GCS bucket name of form <bucketname> or with an optional prefix of form <bucketname>/<prefix>
-        destination: dnsr-bach
+        credentials_json: '${{ secrets.SERVICE_ACCOUNT_CREDENTIALS }}'
+        
+    - id: 'upload-file'
+      uses: 'google-github-actions/upload-cloud-storage@v0'
+      with:
+        path: '/dist'
+        destination: 'dnsr-bach'
 
