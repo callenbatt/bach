@@ -34,7 +34,7 @@ jobs:
       uses: google-github-actions/upload-cloud-storage@v0.10.2
       with:
         # Optional service account key to use for authentication to GCS. This should be the JSON formatted private key which can be exported from the Cloud Console. The value can be raw or base64-encoded.
-        credentials: {{secrets.SERVICE_ACCOUNT_CREDENTIALS}}
+        credentials: ${{secrets.SERVICE_ACCOUNT_CREDENTIALS}}
         # Project ID to use for making requests. By default, this is extracted from the credentials or the running environment.
         project_id: dnsr-cdn
         # The path to a file or folder inside the action's filesystem that should be uploaded to the bucket. You can specify either the absolute path or the relative path from the action.
