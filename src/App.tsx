@@ -2,14 +2,6 @@ import { Component, createSignal, For } from "solid-js";
 import { createStore } from "solid-js/store";
 import {
   Input,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  Grid,
-  GridItem,
   Switch,
   VStack,
   Alert,
