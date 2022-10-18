@@ -1,13 +1,14 @@
-import { Component, createSignal, For } from 'solid-js';
-import { 
+import { Component, createSignal, For } from "solid-js";
+import { createStore } from "solid-js/store";
+import {
   Input,
   Table,
   Thead,
   Tbody,
   Tr,
   Th,
-  Td, 
-  Grid, 
+  Td,
+  Grid,
   GridItem,
   Switch,
   VStack,
@@ -20,12 +21,23 @@ import {
   AccordionItem,
   AccordionPanel,
   Button,
-} from "@hope-ui/solid"
+  ListItem,
+  UnorderedList,
+  CircularProgress,
+  CircularProgressIndicator,
+  Box,
+  Center,
+  HStack,
+  Flex,
+  Spacer,
+  Text,
+} from "@hope-ui/solid";
 
-import Papa from 'papaparse';
+import Papa from "papaparse";
 
 // import logo from './logo.svg';
-import styles from './App.module.css';
+import styles from "./App.module.css";
+import { preview } from "vite";
 
 const expectedHeaders = [
   "Location Name",
@@ -41,7 +53,7 @@ const expectedHeaders = [
   "Phone Number",
   "Fax Number",
   "Email",
-  "Category"	,
+  "Category",
   "Primary Thumbnail",
   "Primary Thumbnail Alt-Text",
   "Primary Logo",
@@ -49,56 +61,66 @@ const expectedHeaders = [
   "Secondary Thumbnail",
   "Secondary Thumbnail Alt-Text",
   "Secondary Logo",
-  "Secondary Logo Alt-Text"
+  "Secondary Logo Alt-Text",
 ];
 
 type PhoneNumber = {
-  number: string
-}
+  number: string;
+};
 
 type Location = {
-  name      : string
-  address1  ?: string,
-  address2  ?: string,
-  city      ?: string
-  country   ?: string
-  email     ?: string
-  fax       ?: PhoneNumber
-  motto     ?: string
-  phone     ?: PhoneNumber
-  state     ?: string
-  subtitle  ?: string
-  title     ?: string
-  zip       ?: string
-  [key: string]: any
-}
+  name: string;
+  address1?: string;
+  address2?: string;
+  city?: string;
+  country?: string;
+  email?: string;
+  fax?: PhoneNumber;
+  motto?: string;
+  phone?: PhoneNumber;
+  state?: string;
+  subtitle?: string;
+  title?: string;
+  zip?: string;
+  [key: string]: any;
+};
 
 type Task = {
-  location: {
-    body: Location
-    display: []
-  }
-  [key: string]: any
-}
+  location: Subtask;
+  locationPrimaryLogo?: Subtask;
+  locationPrimaryThumbnail?: Subtask;
+  locationSecondaryLogo?: Subtask;
+  locationSecondaryThumbnail?: Subtask;
+  [key: string]: any;
+};
 
+type Subtask = {
+  title: string;
+  body: {
+    [key: string]: any;
+  };
+  display: {}[];
+};
+
+type DisplayListItem = {
+  key: string;
+  value: string;
+};
 
 const App: Component = () => {
-
-  const [getData, setData] = createSignal([] as any);
-  const [getTableHeaders, setTableHeaders] = createSignal([] as string[]);
-  const [getTableRows, setTableRows] = createSignal([] as unknown[][]);
+  const [getData, setData] = createStore([] as Task[]);
 
   const handleInputFile = async (e: Event) => {
     const file = ((e.target as HTMLInputElement).files as FileList)[0] as File;
 
     //return if not a csv
     if (file.type !== "text/csv") return;
-    
+
     // get the text
     const csvText = await file.text();
-    
+
     // get the data
-    const data = Papa.parse(csvText, {header: true}).data;
+    const data = Papa.parse(csvText, { header: true }).data;
     // return if there is no data
     if (!Array.isArray(data)) {
       return console.error("invalid csv");
@@ -108,158 +130,231 @@ const App: Component = () => {
     const headers = Object.keys(data[0]);
 
     // check/warn for missing headers
-    const headersNotFoundInImport = expectedHeaders.filter(h => !headers.includes(h));
+    const headersNotFoundInImport = expectedHeaders.filter(
+      (h) => !headers.includes(h)
+    );
     console.log(headersNotFoundInImport);
 
     // build the tasks
-    const tasks = data.map((location) => {
+    const tasks = data.map((location): Task => {
+      const locationName = location["Location Name"];
       // for each task, the first task is to import the location
-      function subtaskLocation(location: any) {
-
+      function subtaskLocation(location: any): Subtask {
         const body: Location = {
-          name: location["Location Name"],
-        }
-        const display = [
-          {key: "Location Name", value: location["Location Name"]}
-        ];
+          name: locationName,
+        };
+        const display = [{ key: "Location Name", value: locationName }];
 
         const mapping: {} = {
           "Address 1": "address1",
           "Address 2": "address2",
           "City/Town": "city",
-          "Country": "country",
-          "Email": "email",
+          Country: "country",
+          Email: "email",
           "Fax Number": "fax",
-          "Motto": "motto",
+          Motto: "motto",
           "Phone Number": "phone",
           "State/Province": "state",
-          "Subtitle": "subtitle",
-          "Title": "title",
+          Subtitle: "subtitle",
+          Title: "title",
           "Postal Code": "zip",
-        }
+        };
 
         Object.keys(mapping).forEach((header) => {
           const value = location[header];
 
           if (!value || !mapping[header as keyof typeof mapping]) {
             return;
-          };
+          }
 
           body[mapping[header as keyof typeof mapping]] = value;
 
-          display.push({key: header, value: value});
-
+          display.push({ key: header, value: value });
         });
 
-        return {title: "Location Setup", body, display}
+        return { title: "Location Setup", body, display };
       }
 
-      return {location: subtaskLocation(location)};
-    })
+      function subtaskLocationImage(location: any, image: string): Subtask {
+        const url = location[image];
+        const altText = location[`${image} Alt-Text`];
+
+        return {
+          title: `Location ${image}`,
+          body: {
+            url: url,
+            name: locationName,
+          },
+          display: [
+            { key: image, value: url },
+            { key: `${image} Alt-Text`, value: altText },
+          ],
+        };
+      }
+
+      const task: Task = { location: subtaskLocation(location) };
+
+      [
+        "Primary Logo",
+        "Primary Thumbnail",
+        "Secondary Logo",
+        "Secondary Thumbnail",
+      ].forEach((image: string) => {
+        if (location[image]) {
+          task[`location${image.replace(/\s/, "")}`] = subtaskLocationImage(
+            location,
+            image
+          );
+        }
+      });
+
+      return task;
+    });
 
     setData(tasks);
-    console.log(tasks);
-  }
+  };
 
+  const handleSetupSwitch = (e: Event) => {
+    const label = (e.currentTarget as HTMLInputElement).getAttribute(
+      "data-label"
+    );
+    const key = `setup${label}`;
+    const data = getData;
+    if (data[key as keyof typeof data]) {
+      console.log(data);
+      console.log("delete it!");
+      delete data[key as keyof typeof data];
+      setData(data);
+    } else {
+      console.log(data);
+      console.log("add it!");
+      const newData = data.map((task: Task) => {
+        return {
+          ...task,
+          [key]: {
+            title: `Setup ${label}`,
+            body: {},
+            display: [],
+          },
+        };
+      });
+      setData(newData);
+    }
+  };
 
   return (
-    <Grid class={styles.App}
-      h="100vh" 
-      templateColumns="repeat(2, 1fr)" 
-      templateRows="repeat(5, 1fr)" 
-    >
-      <GridItem area="1 / 1 / 2 / 2">
-        <Input paddingTop="$1" type="file" size="md" oninput={(e) => handleInputFile(e)}/>
-        <Alert status="info">
-          <AlertIcon mr="$2_5" />
-          <VStack>
-            <p><a href="#">Click here</a> for an example data sheet</p>
-            <p>File must be .csv whith proper headers</p>
-          </VStack>
-        </Alert>
-      </GridItem>
+    <VStack width={"100%"}>
+      <Flex>
+        <Box>
+          <Input
+            paddingTop="$1"
+            type="file"
+            size="md"
+            oninput={(e: Event) => handleInputFile(e)}
+          />
+        </Box>
+        <Spacer />
+        <Box>
+          <Alert status="info">
+            <AlertIcon mr="$2_5" />
+            <VStack>
+              <p>
+                <a href="#">Click here</a> for an example data sheet
+              </p>
+              <p>File must be .csv whith proper headers</p>
+            </VStack>
+          </Alert>
+        </Box>
+      </Flex>
+      <HStack spacing={"$16"}>
+        <Heading>Setup Options:</Heading>
+        <Switch
+          data-label="Posts"
+          labelPlacement={"end"}
+          onClick={handleSetupSwitch}
+        >
+          Posts
+        </Switch>
+        <Switch
+          data-label="Resources"
+          labelPlacement={"end"}
+          onClick={handleSetupSwitch}
+        >
+          Resources
+        </Switch>
+        <Switch
+          data-label="Messages"
+          labelPlacement={"end"}
+          onClick={handleSetupSwitch}
+        >
+          Messages
+        </Switch>
+        <Switch
+          data-label="Forms"
+          labelPlacement={"end"}
+          onClick={handleSetupSwitch}
+        >
+          Forms
+        </Switch>
+      </HStack>
 
-      <GridItem area="2 / 1 / 4 / 2"> 
-        <VStack>
-          <Heading>Options:</Heading>
-          <Switch labelPlacement={"end"} >Switch 1</Switch>
-          <Switch labelPlacement={"end"} >Switch 1</Switch>
-          <Switch labelPlacement={"end"} >Switch 1</Switch>
-          <Switch labelPlacement={"end"} >Switch 1</Switch>
-        </VStack>
-      </GridItem>
-
-      <GridItem area="4 / 1 / 6 / 3">
-        <Table dense highlightOnHover striped='odd'>
-          <Thead>
-            <Tr>
-              <For each={getTableHeaders()} fallback={<div>No items</div>}>
-                {(header, index) => <Th data-index={index()}>{header}</Th>}
-              </For>
-            </Tr>
-          </Thead>
-          <Tbody>
-              <For each={getTableRows()}>
-                {(row, i) => {
-                  return (
-                    <Tr data-index={i}>
-                      <For each={row}>
-                        {(cell, j) => <Td data-index={j}>{cell as string}</Td>}
-                      </For>
-                    </Tr>
-                  )
-                }}
-              </For>
-          </Tbody>
-        </Table>
-      </GridItem>
-
-      <GridItem area="1 / 2 / 4 / 3">
-        <Heading>
-          Import
-        </Heading>
-        <Accordion>
-          <For each={getData()}>
-            {(task: Task, i) => {
-              return (
-                <AccordionItem data-index={i}>
-                  <h2>
-                    <AccordionButton>
-                      <span>{task.location.body.name}</span>
-                      <AccordionIcon />
-                    </AccordionButton>
-                  </h2>
-                  <AccordionPanel>
-                    <Accordion>
-                      <For each={Object.keys(task)}>
-                        {(subtask: any, j) => {
-                          return(
-                            <AccordionItem data-index={j}>
-                              <h3>
-                                <AccordionButton>
-                                  <span>{task[subtask].title}</span>
-                                  <AccordionIcon />
-                                </AccordionButton>
-                              </h3>
-                              <AccordionPanel>
-
-                              </AccordionPanel>
-                            </AccordionItem>
-                          )
-                        }}
-                      </For>
-                    </Accordion>
-                  </AccordionPanel>
-                </AccordionItem>
-              )
-            }}
-          </For>
-        </Accordion>
-        <Button>
-          Import
-        </Button>
-      </GridItem>
-    </Grid>
+      <Heading>Import</Heading>
+      <Accordion allowMultiple width={"100%"}>
+        <For each={getData}>
+          {(task: Task, i) => {
+            return (
+              <AccordionItem data-index={i}>
+                <h2>
+                  <AccordionButton>
+                    <CircularProgress size="$4" value={0}>
+                      <CircularProgressIndicator color="$success9" />
+                    </CircularProgress>
+                    <span>{task.location.body.name}</span>
+                    <AccordionIcon />
+                  </AccordionButton>
+                </h2>
+                <AccordionPanel>
+                  <Accordion allowMultiple>
+                    <For each={Object.keys(task)}>
+                      {(subtask: any, j) => {
+                        return (
+                          <AccordionItem data-index={j}>
+                            <h3>
+                              <AccordionButton>
+                                <CircularProgress size="$4" value={0}>
+                                  <CircularProgressIndicator color="$success9" />
+                                </CircularProgress>
+                                <span>{task[subtask].title}</span>
+                                <AccordionIcon />
+                              </AccordionButton>
+                            </h3>
+                            <AccordionPanel>
+                              <UnorderedList>
+                                <For each={task[subtask].display}>
+                                  {(displayListItem: DisplayListItem, k) => {
+                                    return (
+                                      <ListItem data-index={k}>
+                                        {displayListItem.key}:{" "}
+                                        {displayListItem.value}
+                                      </ListItem>
+                                    );
+                                  }}
+                                </For>
+                              </UnorderedList>
+                            </AccordionPanel>
+                          </AccordionItem>
+                        );
+                      }}
+                    </For>
+                  </Accordion>
+                </AccordionPanel>
+              </AccordionItem>
+            );
+          }}
+        </For>
+      </Accordion>
+      <Button>Import</Button>
+    </VStack>
   );
 };
 
