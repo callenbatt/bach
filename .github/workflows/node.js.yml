@@ -16,7 +16,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [14.x, 16.x, 18.x]
+        node-version: [18.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
@@ -34,26 +34,11 @@ jobs:
       uses: google-github-actions/upload-cloud-storage@v0.10.2
       with:
         # Optional service account key to use for authentication to GCS. This should be the JSON formatted private key which can be exported from the Cloud Console. The value can be raw or base64-encoded.
-        credentials: # optional
+        credentials: {{secrets.SERVICE_ACCOUNT_CREDENTIALS}}
         # Project ID to use for making requests. By default, this is extracted from the credentials or the running environment.
         project_id: dnsr-cdn
         # The path to a file or folder inside the action's filesystem that should be uploaded to the bucket. You can specify either the absolute path or the relative path from the action.
         path: /dist
         # GCS bucket name of form <bucketname> or with an optional prefix of form <bucketname>/<prefix>
         destination: dnsr-bach
-        # Upload file(s) with gzip content encoding, defaults to true.
-        gzip: # optional, default is true
-        # Enable resumable uploads, defaults to true.
-        resumable: # optional, default is true
-        # Apply a predefined set of access controls to the file(s).
-        predefinedAcl: # optional
-        # Whether parent dir should be included in GCS destination, defaults to true.
-        parent: # optional, default is true
-        # Optional glob pattern.
-        glob: # optional
-        # Number of files to simultaneously upload.
-        concurrency: # optional, default is 100
-        # Set headers (object metadata).
-        headers: # optional
-        # Process the .gcloudignore file in the root of the repository and do not upload files that match the patterns.
-        process_gcloudignore: # optional, default is true
+
