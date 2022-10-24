@@ -118,18 +118,20 @@ function getComposerPermissions() {
 }
 
 async function run() {
-  const composer = await getComposerPermissions();
-  const forms = await getFormsPermissions();
-  const locations = await getLocationsPermissions();
-  const posts = await getPostsPermissions();
-  const messages = await getMessagesPermissions();
-  const pagepops = await getPagePopsPermissions();
-  const workflows = await getWorkflowsPermissions();
-  const socialmedia = await getSocialMediaConnectionsPermissions();
-  const crisismode = await getCrisisModePermissions();
-  console.log({
-    composer, forms, locations, posts, messages, pagepops, workflows, socialmedia, crisismode
-  })
+  try {
+    const composer = await getComposerPermissions();
+    const forms = await getFormsPermissions();
+    const locations = await getLocationsPermissions();
+    const posts = await getPostsPermissions();
+    const messages = await getMessagesPermissions();
+    const pagepops = await getPagePopsPermissions();
+    const workflows = await getWorkflowsPermissions();
+    const socialmedia = await getSocialMediaConnectionsPermissions();
+    const crisismode = await getCrisisModePermissions();
+    console.log({
+      composer, forms, locations, posts, messages, pagepops, workflows, socialmedia, crisismode
+    })
+  } catch(e) {
+    console.error(e)
+  }
 }
-
-run();
